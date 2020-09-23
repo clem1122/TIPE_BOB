@@ -158,6 +158,7 @@ class Ground(object):
         self.y = (self.a.y + self.b.y) / 2
         self.lon = dist(self.a.x, self.a.y, self.b.x, self.b.y)
         self.rot = atan2((self.b.y - self.a.y), (self.b.x - self.a.x))
+        #bonjour
         
 
 
