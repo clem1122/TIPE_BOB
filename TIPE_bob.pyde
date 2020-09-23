@@ -153,7 +153,7 @@ class Ground(object):
 
     def __init__(self, x1, y1, x2, y2):
         self.a = PVector(x1, y1)
-        self.b = PVector(x2,y2)
+        self.b = PVector(x2, y2)
         self.x = (self.a.x + self.b.x) / 2
         self.y = (self.a.y + self.b.y) / 2
         self.lon = dist(self.a.x, self.a.y, self.b.x, self.b.y)
