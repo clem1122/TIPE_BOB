@@ -2,7 +2,7 @@ bobs = []
 grounds = []
 nb_bobs = 25
 
-
+coucou hello
 def setup():
     size(640, 600)
     global grounds
