@@ -1,3 +1,46 @@
+bobs = []
+grounds = []
+nb_bobs = 25
+
+
+def setup():
+    size(640, 600)
+    global grounds
+    
+    wall1 = Ground(100,300,300,100)
+    wall2 = Ground(300,100,500, 300)
+    wall3 = Ground(300,500,500, 300)
+    wall4 = Ground(100,300,300,500)
+    
+    grounds = [wall1,wall2,wall3,wall4]
+    
+    for i in range(nb_bobs):
+        bobs.append(Bob(random(250,300), random(250,300), 10,i))
+    
+    ellipseMode(RADIUS)
+    
+def draw():
+    clear()
+    noStroke()
+    fill(0, 15)
+
+    for bob in bobs:
+        
+        for ground in grounds:
+            bob.checkGroundCollision(ground)
+        bob.checkOtherCollision()
+        bob.checkWallCollision()
+        bob.move()
+        bob.display()
+
+    fill(127)
+    beginShape()
+    for ground in grounds:
+        stroke(255)
+        line(ground.x1, ground.y1, ground.x2, ground.y2)
+        
+        
+
 
 class Bob(object):
     # A damping of 80% slows it down when it hits the ground.
@@ -109,6 +152,8 @@ class Bob(object):
 class Ground(object):
 
     def __init__(self, x1, y1, x2, y2):
+        self.a = PVector(x1, y1)
+        self.b = PVector(
         self.x1 = x1
         self.y1 = y1
         self.x2 = x2
@@ -118,46 +163,7 @@ class Ground(object):
         self.length = dist(self.x1, self.y1, self.x2, self.y2)
         self.rot = atan2((self.y2 - self.y1), (self.x2 - self.x1))
         
-bobs = []
-grounds = []
-nb_bobs = 25
-def setup():
-    size(640, 600)
-    global grounds
-    
-    wall1 = Ground(100,300,300,100)
-    wall2 = Ground(300,100,500, 300)
-    wall3 = Ground(300,500,500, 300)
-    wall4 = Ground(100,300,300,500)
-    
-    grounds = [wall1,wall2,wall3,wall4]
-    
-    for i in range(nb_bobs):
-        bobs.append(Bob(random(250,300), random(250,300), 10,i))
-    
-    ellipseMode(RADIUS)
+
+
  
  
-global obj
-obj = (100,300)
-def draw():
-    clear()
-
-    noStroke()
-    fill(0, 15)
-    rect(0, 0, width, height)
-
-    for bob in bobs:
-        
-        for ground in grounds:
-            bob.checkGroundCollision(ground)
-        bob.checkOtherCollision()
-        bob.checkWallCollision()
-        bob.move()
-        bob.display()
-
-    fill(127)
-    beginShape()
-    for ground in grounds:
-        stroke(255)
-        line(ground.x1, ground.y1, ground.x2, ground.y2)
