@@ -1,6 +1,9 @@
 bobs = []
 grounds = []
-nb_bobs = 25
+nb_bobs = 100
+MouseMag = 0.1
+RepMag = 2
+frot = 0.98
 
 
 def setup():
@@ -15,7 +18,7 @@ def setup():
     grounds = [wall1,wall2,wall3,wall4]
     
     for i in range(nb_bobs):
-        bobs.append(Bob(random(250,300), random(250,300), 10,i))
+        bobs.append(Bob(random(250,300), random(250,300), 5,i))
     
     ellipseMode(RADIUS)
     
@@ -23,6 +26,8 @@ def draw():
     clear()
     noStroke()
     fill(0, 15)
+    
+
 
     for bob in bobs:
         bob.move()
@@ -52,18 +57,21 @@ class Bob(object):
         self.index = index
 
     def move(self):
-        self.acceleration.add(self.FollowMouse())
-        self.acceleration.add(self.CheckOtherCollision())
-        self.acceleration.limit(10)
+
+        
+        #self.acceleration.limit(1)
         self.velocity.add(self.acceleration)
+        self.velocity.mult(frot)
         self.position.add(self.velocity)
         self.acceleration.mult(0)
+        self.acceleration.add(self.CheckOtherCollision())
+        self.acceleration.add(self.FollowMouse())
 
     def display(self):
         # Draw orb.
         noStroke()
         fill(200)
-        circle(self.position.x, self.position.y, self.radius)
+        circle(self.position.x, self.position.y, self.radius * 2)
         
 
     def checkGroundCollision(self, ground):
@@ -114,24 +122,28 @@ class Bob(object):
         self.position.y = ground.y + deltaY
         
     def CheckOtherCollision(self):
+        noFill()
+        stroke(255)
+        circle(self.position.x, self.position.y, 3* self.radius)
+        
         F = PVector(0,0)
         for other in bobs:
             d = dist(other.position.x, other.position.y, self.position.x, self.position.y)
-            if d != 0:
-                f = PVector(ohter.x - self.x, other.y - self.y).normalize()
-                f.mult(map(d, 0, 3 * self.radius, 10, 0))
+            if d  < self.radius*6 and d > 0:
+                f = PVector(self.position.x - other.position.x, self.position.y - other.position.y)
+                f.setMag(map(d, 0, 6*self.radius, RepMag, 0))
                 F.add(f)
                     
-       return F
+        return F
             
     def FollowMouse(self):
          if mousePressed:
             ax = -(mouseX-self.position.x)
             ay = -(mouseY-self.position.y)
-        else:
+         else:
             ax = mouseX-self.position.x
             ay = mouseY-self.position.y
-        return PVector(ax,ay)
+         return PVector(ax,ay).setMag(MouseMag)
             
             
            
@@ -145,8 +157,5 @@ class Ground(object):
         self.lon = dist(self.a.x, self.a.y, self.b.x, self.b.y)
         self.rot = atan2((self.b.y - self.a.y), (self.b.x - self.a.x))
         #bonjour
-        
-
-
  
  
