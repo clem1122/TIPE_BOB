@@ -108,8 +108,8 @@ class Bob(object):
         
         if groundYTemp < 0:
             if (groundYTemp > -self.radius and
-                self.position.x > ground.x1 and
-                self.position.x < ground.x2):
+                self.position.x > ground.a.x and
+                self.position.x < ground.b.x):
                 # keep orb from going into ground.
                 groundYTemp = -self.radius
                 # bounce and slow down orb.
@@ -117,8 +117,8 @@ class Bob(object):
                 velocityYTemp *= Bob.Damping
         else:
             if (groundYTemp < self.radius and
-                self.position.x > ground.x1 and
-                self.position.x < ground.x2):
+                self.position.x > ground.a.x and
+                self.position.x < ground.b.x):
                 # keep orb from going into ground.
                 groundYTemp = self.radius
                 # bounce and slow down orb.
@@ -134,21 +134,19 @@ class Bob(object):
         self.position.y = ground.y + deltaY
         
     def checkOtherCollision(self):
-        for other in bobs[self.index:]:
-            dx = other.position.x - self.position.x
-            dy = other.position.y - self.position.y
-            minDist = other.radius + self.radius
-            if self.position.dist(other.position) < 1.1*minDist:
-                angle = atan2(dy, dx)
-                targetX = self.position.x + cos(angle) * minDist
-                targetY = self.position.y + sin(angle) * minDist
-                ax = (targetX - other.position.x) * Bob.Spring
-                ay = (targetY - other.position.y) * Bob.Spring
-                self.velocity.x -= ax
-                self.velocity.y -= ay
-                other.velocity.x += ax
-                other.velocity.y += ay
-
+        F = PVector(0,0)
+        for other in bobs:
+            d = dist(other.position.x, other.position.y, self.position.x, self.position.y)
+            if d != 0:
+                f = PVector(ohter.x - self.x, other.y - self.y).normalize()
+                f.mult(map(d, 0, 3 * self.radius, 10, 0))
+                F.add(f)
+                    
+       return F
+            
+            
+            
+           
 class Ground(object):
 
     def __init__(self, x1, y1, x2, y2):
