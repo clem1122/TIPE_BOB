@@ -25,11 +25,6 @@ def draw():
     fill(0, 15)
 
     for bob in bobs:
-        
-        for ground in grounds:
-            bob.checkGroundCollision(ground)
-        bob.checkOtherCollision()
-        bob.checkWallCollision()
         bob.move()
         bob.display()
 
@@ -57,34 +52,19 @@ class Bob(object):
         self.index = index
 
     def move(self):
-        # Move orb.
-        if mousePressed:
-            ax = -(mouseX-self.position.x)
-            ay = -(mouseY-self.position.y)
-        else:
-            ax = mouseX-self.position.x
-            ay = mouseY-self.position.y
-        self.acceleration = PVector(ax, ay)
-        self.acceleration.normalize()
+        self.acceleration.add(self.FollowMouse())
+        self.acceleration.add(self.CheckOtherCollision())
+        self.acceleration.limit(10)
         self.velocity.add(self.acceleration)
         self.position.add(self.velocity)
-        
+        self.acceleration.mult(0)
 
     def display(self):
         # Draw orb.
         noStroke()
         fill(200)
         circle(self.position.x, self.position.y, self.radius)
-
-    # Check boundaries of window.
-    def checkWallCollision(self):
-        if self.position.x > width - self.radius:
-            self.position.x = width - self.radius
-            self.velocity.x *= -Bob.Damping
-
-        elif self.position.x < self.radius:
-            self.position.x = self.radius
-            self.velocity.x *= -Bob.Damping
+        
 
     def checkGroundCollision(self, ground):
         
@@ -133,7 +113,7 @@ class Bob(object):
         self.position.x = ground.x + deltaX
         self.position.y = ground.y + deltaY
         
-    def checkOtherCollision(self):
+    def CheckOtherCollision(self):
         F = PVector(0,0)
         for other in bobs:
             d = dist(other.position.x, other.position.y, self.position.x, self.position.y)
@@ -144,6 +124,14 @@ class Bob(object):
                     
        return F
             
+    def FollowMouse(self):
+         if mousePressed:
+            ax = -(mouseX-self.position.x)
+            ay = -(mouseY-self.position.y)
+        else:
+            ax = mouseX-self.position.x
+            ay = mouseY-self.position.y
+        return PVector(ax,ay)
             
             
            
