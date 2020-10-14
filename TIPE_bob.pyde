@@ -3,8 +3,10 @@ grounds = []
 nb_bobs = 50
 MouseMag = 0.1
 RepMag = 2
+WallMag = 5
 frot = 0.98
-bob_radius = 15
+bob_radius = 15*
+grounds = []
 
 
 def setup():
@@ -16,7 +18,10 @@ def setup():
     wall3 = Ground(300,500,500, 300)
     wall4 = Ground(100,300,300,500)
     
-    grounds = [wall1]#,wall2,wall3,wall4]
+    grounds.append(wall1)
+    grounds.append(wall2)
+    grounds.append(wall3)
+    grounds.append(wall4)
     
     for i in range(nb_bobs):
         bobs.append(Bob(random(250,300), random(250,300), bob_radius,i))
@@ -24,6 +29,7 @@ def setup():
     #ellipseMode(RADIUS)
     
 def draw():
+    
     clear()
     noStroke()
     fill(0, 15)
@@ -33,7 +39,7 @@ def draw():
     for bob in bobs:
         bob.move()
         bob.display()
-        print(bob.intersection(wall1))
+        
 
     fill(127)
     beginShape()
@@ -68,6 +74,7 @@ class Bob(object):
         self.acceleration.mult(0)
         self.acceleration.add(self.CheckOtherCollision())
         self.acceleration.add(self.FollowMouse())
+        self.acceleration.add(self.intersection(grounds))
 
     def display(self):
         # Draw orb.
@@ -76,52 +83,15 @@ class Bob(object):
         circle(self.position.x, self.position.y, self.radius * 2)
         
 
-    def checkGroundCollision(self, ground):
-        
-        # Get difference between orb and ground.
-        deltaX = (self.position.x - ground.x)
-        deltaY = (self.position.y - ground.y)
-
-        # Precalculate trig values.
-        cosine = cos(ground.rot)
-        sine = sin(ground.rot)
-
-        # Rotate ground and velocity to allow orthogonal collision.
-        #  calculations
-        groundXTemp = cosine * deltaX + sine * deltaY
-        groundYTemp = cosine * deltaY - sine * deltaX
-        velocityXTemp = cosine * self.velocity.x + sine * self.velocity.y
-        velocityYTemp = cosine * self.velocity.y - sine * self.velocity.x
-            
-        # Ground collision - check for surface collision and also that orb is
-        #  within left / right bounds of ground segment.
-        
-        if groundYTemp < 0:
-            if (groundYTemp > -self.radius and
-                self.position.x > ground.a.x and
-                self.position.x < ground.b.x):
-                # keep orb from going into ground.
-                groundYTemp = -self.radius
-                # bounce and slow down orb.
-                velocityYTemp *= -1.0
-                velocityYTemp *= Bob.Damping
-        else:
-            if (groundYTemp < self.radius and
-                self.position.x > ground.a.x and
-                self.position.x < ground.b.x):
-                # keep orb from going into ground.
-                groundYTemp = self.radius
-                # bounce and slow down orb.
-                velocityYTemp *= -1.0
-                velocityYTemp *= Bob.Damping
-    
-        # Reset ground, velocity and orb.
-        deltaX = cosine * groundXTemp - sine * groundYTemp
-        deltaY = cosine * groundYTemp + sine * groundXTemp
-        self.velocity.x = (cosine * velocityXTemp - sine * velocityYTemp)*0.9
-        self.velocity.y = (cosine * velocityYTemp + sine * velocityXTemp)*0.9
-        self.position.x = ground.x + deltaX
-        self.position.y = ground.y + deltaY
+    def checkGroundCollision(self, grounds):
+        F = PVector(0,0)
+        for ground in grounds:
+           if self.intersection(ground):
+               f = PVector(ground.b.x - ground.a.x, ground.b.y - ground.a.y,).rotate(HALF_PI)
+               f.setMag(WallMag)
+               F.add(f)
+        return F
+ 
         
     def CheckOtherCollision(self):
         noFill()
