@@ -1,22 +1,22 @@
 bobs = []
 grounds = []
-nb_bobs = 50
+nb_bobs = 100
 MouseMag = 0.1
 RepMag = 2
 WallMag = 5
-frot = 0.98
-bob_radius = 15*
+frot = 0.992
+bob_radius = 5
 grounds = []
 
 
 def setup():
-    size(640, 600)
+    size(640, 600, P3D)
     global grounds
     
     wall1 = Ground(100,300,300,100)
     wall2 = Ground(300,100,500, 300)
-    wall3 = Ground(300,500,500, 300)
-    wall4 = Ground(100,300,300,500)
+    wall3 = Ground(500, 300,300,500)
+    wall4 = Ground(300,500,100,300)
     
     grounds.append(wall1)
     grounds.append(wall2)
@@ -24,7 +24,7 @@ def setup():
     grounds.append(wall4)
     
     for i in range(nb_bobs):
-        bobs.append(Bob(random(250,300), random(250,300), bob_radius,i))
+        bobs.append(Bob(random(width), random(height), bob_radius,i))
     
     #ellipseMode(RADIUS)
     
@@ -74,7 +74,7 @@ class Bob(object):
         self.acceleration.mult(0)
         self.acceleration.add(self.CheckOtherCollision())
         self.acceleration.add(self.FollowMouse())
-        self.acceleration.add(self.intersection(grounds))
+        self.acceleration.add(self.checkGroundCollision(grounds))
 
     def display(self):
         # Draw orb.
@@ -95,9 +95,7 @@ class Bob(object):
         
     def CheckOtherCollision(self):
         noFill()
-        stroke(255)
-        circle(self.position.x, self.position.y, 3* self.radius)
-        
+        stroke(255)        
         F = PVector(0,0)
         for other in bobs:
             d = dist(other.position.x, other.position.y, self.position.x, self.position.y)
@@ -112,10 +110,11 @@ class Bob(object):
          if mousePressed:
             ax = -(mouseX-self.position.x)
             ay = -(mouseY-self.position.y)
+            return PVector(0,0)
          else:
             ax = mouseX-self.position.x
             ay = mouseY-self.position.y
-         return PVector(ax,ay).setMag(MouseMag)
+            return PVector(ax,ay).setMag(MouseMag)
             
     def intersection(self, ground):
          L = ground.a 
@@ -145,7 +144,6 @@ class Ground(object):
         self.y = (self.a.y + self.b.y) / 2
         self.lon = dist(self.a.x, self.a.y, self.b.x, self.b.y)
         self.rot = atan2((self.b.y - self.a.y), (self.b.x - self.a.x))
-
 
 
 
