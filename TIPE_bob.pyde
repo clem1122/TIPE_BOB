@@ -1,9 +1,10 @@
 bobs = []
 grounds = []
-nb_bobs = 100
+nb_bobs = 50
 MouseMag = 0.1
 RepMag = 2
 frot = 0.98
+bob_radius = 15
 
 
 def setup():
@@ -15,23 +16,24 @@ def setup():
     wall3 = Ground(300,500,500, 300)
     wall4 = Ground(100,300,300,500)
     
-    grounds = [wall1,wall2,wall3,wall4]
+    grounds = [wall1]#,wall2,wall3,wall4]
     
     for i in range(nb_bobs):
-        bobs.append(Bob(random(250,300), random(250,300), 5,i))
+        bobs.append(Bob(random(250,300), random(250,300), bob_radius,i))
     
-    ellipseMode(RADIUS)
+    #ellipseMode(RADIUS)
     
 def draw():
     clear()
     noStroke()
     fill(0, 15)
     
-
+    wall1 = grounds[0]
 
     for bob in bobs:
         bob.move()
         bob.display()
+        print(bob.intersection(wall1))
 
     fill(127)
     beginShape()
@@ -129,9 +131,9 @@ class Bob(object):
         F = PVector(0,0)
         for other in bobs:
             d = dist(other.position.x, other.position.y, self.position.x, self.position.y)
-            if d  < self.radius*6 and d > 0:
+            if d  < self.radius*3 and d > 0:
                 f = PVector(self.position.x - other.position.x, self.position.y - other.position.y)
-                f.setMag(map(d, 0, 6*self.radius, RepMag, 0))
+                f.setMag(map(d, 0, 3*self.radius, RepMag, 0))
                 F.add(f)
                     
         return F
@@ -145,6 +147,23 @@ class Bob(object):
             ay = mouseY-self.position.y
          return PVector(ax,ay).setMag(MouseMag)
             
+    def intersection(self, ground):
+         L = ground.a 
+         E = ground.b 
+         C = self.position  
+         d = E.copy().sub(L) 
+         r = self.radius 
+         f = C.copy().sub(E)
+         a = d.dot(d) 
+         b = 2*f.dot(d) 
+         c = f.dot(f) - r*r 
+         delta  = b*b -4*a*c 
+         t1 = (-b - sqrt(delta))/(2*a) 
+         t2 = (-b + sqrt(delta))/(2*a) 
+         T1 = E.copy().add(d.copy().mult(-t1)) 
+         T2 = E.copy().add(d.copy().mult(-t2)) 
+  
+         return (delta > 0 and t1 >= 0 and t1 <= 1 or (t2 >= 0 and t2 <= 1))
             
            
 class Ground(object):
@@ -156,6 +175,11 @@ class Ground(object):
         self.y = (self.a.y + self.b.y) / 2
         self.lon = dist(self.a.x, self.a.y, self.b.x, self.b.y)
         self.rot = atan2((self.b.y - self.a.y), (self.b.x - self.a.x))
-        #bonjour
+
+
+
+
+
+
  
  
