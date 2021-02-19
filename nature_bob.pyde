@@ -1,18 +1,20 @@
 bobs = []
 grounds = []
-nb_bobs = 30
+nb_bobs = 20
 MouseMag = 0.1
 RepMag = 250
 WallMag = 100
 ObjMag = 20
 frot = 0.97
-bob_radius = 20
+bob_radius = 10
 maxmasse = 95
 R = 100
 grounds = []
-friction = 0.27
+friction = 0
 bob_damp = 0.8
-
+tau = 0.5
+vi = 1
+v_barrier = 1
 nx = 100//(bob_radius+2)
 ny = 320//(bob_radius+2)
 
@@ -48,7 +50,8 @@ def setup():
     
     depart = Ground(0,370,0,30)
     
-    objectif = Ground(1200,370,1200,30)
+    objectif = Ground(1200,30,1200,370)
+    barrier = Barrier(300, 30, 300,370)
     
     grounds.append(up1)
     grounds.append(up2)
@@ -66,6 +69,7 @@ def setup():
     #grounds.append(obs2)
     
     grounds.append(depart)
+    grounds.append(barrier)
     #grounds.append(objectif)
     
     for i in range(nb_bobs):
@@ -75,6 +79,7 @@ def setup():
 def draw():
     global objectif
     global j
+    global barrier
     objectif = Ground(1200,370,1200,30)
     
 
@@ -84,6 +89,7 @@ def draw():
     #wall1 = grounds[0]
 
     for bob in bobs:
+        bob.acceleration.add(bob.WallCollision(grounds)/bob.masse)
         if bob.position.x<objectif.x:
             bob.move()
             bob.display()
@@ -92,8 +98,9 @@ def draw():
     
     fill(127)
     for ground in grounds:
-        stroke(255)
+        stroke(ground.colour[0],ground.colour[1],ground.colour[2])
         line(ground.a.x, ground.a.y, ground.b.x, ground.b.y)
+        grounds[-1].activate()
     stroke(255)
     line(objectif.a.x, objectif.a.y, objectif.b.x, objectif.b.y)
 
@@ -110,10 +117,10 @@ class Bob(object):
         self.masse = random(60,95)
         self.radius = radius* self.masse/maxmasse
         
-        self.A = 10
-        self.B = 7
-        self.k = 35
-        self.K = 10
+        self.A = 2
+        self.B = 3
+        self.k = 10
+        self.K = 0
         
         
     def move(self):
@@ -121,8 +128,8 @@ class Bob(object):
         self.position.add(self.velocity)
         self.acceleration.mult(0)
         self.acceleration.add(self.CheckOtherCollision())
-        self.acceleration.add(self.FollowObjective())
-        self.acceleration.add(self.checkGroundCollision(grounds))
+        self.acceleration.add(self.NeedForSpeed(grounds[-1]))
+        #self.acceleration.add(self.WallCollision(grounds[:len(grounds)-1]))
         self.acceleration.add(self.FrictionForce())
         self.acceleration.mult(1/self.masse)
 
@@ -146,7 +153,10 @@ class Bob(object):
                 dij = (self.position - other.position).mag()
                 nij = (self.position - other.position).normalize()
                 rij = self.radius + other.radius 
-                tij = nij.copy().rotate(HALF_PI)
+                tij = nij.copy()
+                tij.rotate(HALF_PI)
+                stroke(255,0,0)
+                #line(self.position.x, self.position.y, self.position.x + tij.x*30, self.position.y + tij.y*30)
                 DeltaVij = (other.velocity - self.velocity).dot(tij)
                 fij = (self.A*exp((rij - dij)/self.B)+self.k*self.g(rij - dij))*nij + (self.K*self.g(rij - dij)*DeltaVij)*tij
                 F.add(fij)
@@ -154,20 +164,56 @@ class Bob(object):
     
             
 
-    def checkGroundCollision(self, grounds):
+    # def checkGroundCollision(self, grounds):
+    #     F = PVector(0,0)
+    #     for ground in grounds:
+    #        if self.intersection(ground):
+    #            self.velocity.y *=0.1 
+    #            self.velocity.x *=0.1
+    #            f = PVector(ground.b.x - ground.a.x, ground.b.y - ground.a.y,).rotate(HALF_PI)
+    #            f.setMag(WallMag)
+    #            F.add(f)
+    #     return F
+    
+    
+    
+    def WallCollision(self, grounds):
         F = PVector(0,0)
+        
         for ground in grounds:
-           if self.intersection(ground):
-               self.velocity.y *=0.1 
-               self.velocity.x *=0.1
-               f = PVector(ground.b.x - ground.a.x, ground.b.y - ground.a.y,).rotate(HALF_PI)
-               f.setMag(WallMag)
-               F.add(f)
+             
+            # définir un vecteur directeur de la droite du mur 
+            v = ground.b - ground.a
+            v.normalize()
+            
+            # definir les coordonnées du projeté orthogonal def projete(self, v)
+            I = PVector(self.position.x - ground.x, self.position.y - ground.y)
+            P = v.mult(v.dot(I))
+            H = PVector(P.x + ground.x, P.y + ground.y)
+            
+            # déterminer la validité du projeté def isInSegment(x,y) 
+            def isInSegment(H,ground):
+                vA = ground.a - H
+                vB = ground.b - H
+                return vA.dot(vB)<=0
+            
+            # définir le vecteur normal, le vecteur tangent et appliquer la force 
+            if isInSegment(H,ground):
+                r = self.radius
+                diw = (self.position - H).mag()
+                n = (self.position - H).normalize()
+                stroke(255,0,0)
+                #line(H.x, H.y, H.x+n.x, H.y+n.y)
+                t = n.copy().rotate(HALF_PI)
+           
+                
+                fiw = (self.A*exp((r - diw)/self.B)+self.k*self.g(r - diw))*n + (self.K*self.g(r - diw)*(self.velocity.dot(t)))*t
+                F.add(fiw)
         return F
     
     def FrictionForce(self):
         f = self.velocity.copy()
-        f*= -friction * self.velocity.mag() 
+        f*= -friction * (self.velocity.mag())**2
         return f
             
             
@@ -189,6 +235,22 @@ class Bob(object):
         else:
             return PVector(0,0)
     
+    def FollowBarrier(self, barrier):
+        F = PVector(0,0)
+        if barrier.state == 'g':
+            F = (PVector(vi,0)- self.velocity)/tau
+
+            #F.mult(1/tau)
+        return F
+    def NeedForSpeed(self, barrier):
+        F = PVector(0, 0)
+        if barrier.state == 'g':
+            F = (PVector(vi, 0) - self.velocity)/tau
+        elif barrier.state == 'b':
+            F = (PVector(-vi, 0) - self.velocity)/tau
+        else:
+            F = (PVector(0, 0) - self.velocity)/tau
+        return F
          
     def intersection(self, ground):
          L = ground.a 
@@ -219,3 +281,47 @@ class Ground(object):
         self.y = (self.a.y + self.b.y) / 2
         self.lon = dist(self.a.x, self.a.y, self.b.x, self.b.y)
         self.rot = atan2((self.b.y - self.a.y), (self.b.x - self.a.x))
+        self.colour = (255,255,255)
+        
+    def update(self):
+        self.x = (self.a.x + self.b.x) / 2
+        self.y = (self.a.y + self.b.y) / 2
+        self.lon = dist(self.a.x, self.a.y, self.b.x, self.b.y)
+        self.rot = atan2((self.b.y - self.a.y), (self.b.x - self.a.x))
+        
+
+class Barrier(Ground):
+    
+    def __init__(self, x1, y1, x2, y2):
+        Ground.__init__(self, x1, y1, x2, y2)
+        self.state = 'r'
+        self.colour = (255,0,0)
+        
+    def activate(self):
+        if keyPressed:
+            self.state = 'g'
+            self.colour = (0, 255, 0)
+            self.a.x += v_barrier
+            self.b.x += v_barrier
+            self.x = (self.a.x + self.b.x) / 2
+            self.y = (self.a.y + self.b.y) / 2
+            self.lon = dist(self.a.x, self.a.y, self.b.x, self.b.y)
+            self.rot = atan2((self.b.y - self.a.y), (self.b.x - self.a.x))
+        elif mousePressed:
+            self.state = 'b'
+            self.colour = (0, 0, 255)
+            self.a.x -= v_barrier
+            self.b.x -= v_barrier
+            self.x = (self.a.x + self.b.x) / 2
+            self.y = (self.a.y + self.b.y) / 2
+            self.lon = dist(self.a.x, self.a.y, self.b.x, self.b.y)
+            self.rot = atan2((self.b.y - self.a.y), (self.b.x - self.a.x))
+        else:
+            self.state = 'r'
+            self.colour = (255, 0, 0)
+            self.x = (self.a.x + self.b.x) / 2
+            self.y = (self.a.y + self.b.y) / 2
+            self.lon = dist(self.a.x, self.a.y, self.b.x, self.b.y)
+            self.rot = atan2((self.b.y - self.a.y), (self.b.x - self.a.x))
+            
+        
