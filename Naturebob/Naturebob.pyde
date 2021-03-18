@@ -2,8 +2,6 @@ from bobclasses import *
 from variables import *
 from setupfunctions import *
 
-
-
 def setup():
     size(width, height, P2D)
     
