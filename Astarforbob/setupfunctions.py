@@ -77,3 +77,23 @@ def SetGrounds2():
     circles.append(circle1)
     
     return 
+
+def SetCircle():
+    global grounds
+    global circles
+    up1 = Ground(0, 120, 1400, 120)
+    dn1 = Ground(0, 270, 1400, 270)
+
+    depart = Ground(30, 370, 30, 30)
+    barrier = Barrier(700, 30, 700, 370)
+
+    circle1 = Circle(320, 195, 30)
+    
+    grounds.append(up1)
+    grounds.append(dn1)
+
+    grounds.append(depart)
+    grounds.append(barrier)
+    circles.append(circle1)
+    
+    return 
