@@ -7,28 +7,32 @@ from setupfunctions import *
 def setup():
     global Y
     global X
+    global Vx
+    global Vy
     size(width, height, P2D)
     
     SetBobFamily()
-    SetGrounds2()
-    BuildObstacle2(GRID, w, h)
+    SetGrounds()
+    BuildObstacle(GRID, w, h)
     BuildObstruction(GRID, w, h)
-    
     X = []
     Y = []
+    Vx = []
+    Vy = [] 
     for i in range(nb_bobs):
         X.append(createWriter("X/positionX"+str(i)+".txt"))
         Y.append(createWriter("Y/positionY"+str(i)+".txt"))
+        Vx.append(createWriter("Vx/vitesseX"+str(i)+".txt"))
+        Vy.append(createWriter("Vy/vitesseY"+str(i)+".txt"))
 
 def draw():
     global j
 
-    
     clear()
     
     displayNode(objectif)
     displayObstruction()
-    displayObstacle2()
+    displayObstacle()
     
     for bob in bobs:
         bob.move(j)
@@ -38,8 +42,14 @@ def draw():
         X[bob.index].print(", ")
         Y[bob.index].print(bob.position.y)
         Y[bob.index].print(", ")
+        Vx[bob.index].print(bob.velocity.x)
+        Vx[bob.index].print(", ")
+        Vy[bob.index].print(bob.velocity.y)
+        Vy[bob.index].print(", ")
+         
 
     for ground in grounds:
+        
         ground.display()
         grounds[-1].activate()
         
@@ -47,4 +57,5 @@ def draw():
         c.display()
         
     j += 1
-    # saveFrame()
+    if j>10:
+        saveFrame()
