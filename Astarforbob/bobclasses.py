@@ -15,7 +15,6 @@ from astarfonctions import *
 #    - CheckOtherCollision
 #    - CircleCollision
 #    - WallCollision
-#    - FrictionForce
 #    - FollowMouse
 #    - NeedForSpeed
 #    - intersection
@@ -68,6 +67,7 @@ class Node:
         else:
             return 0
 
+
 class Bob:
     
     def __init__(self, x, y, radius, index, objectif, grounds, circles, GRID):
@@ -76,8 +76,8 @@ class Bob:
         self.acceleration = PVector(0, 0)
         self.index = index
         self.obj = PVector(1200 - 3 * radius, 200)
-        self.masse = random(75, 100)
-        self.radius = radius * self.masse / maxmasse
+        self.masse = maxmasse
+        self.radius = radius 
         self.e = PVector(1, 0)
         self.objectif = objectif
         self.grounds = grounds
@@ -85,10 +85,8 @@ class Bob:
         self.GRID = GRID
         self.bobs = []
         
-        
-
-        self.A = 30
-        self.B = 5
+        self.A = 20
+        self.B = 3
         self.k = 10
         self.K = 0
         self.kw = 30
@@ -99,18 +97,14 @@ class Bob:
         self.acceleration.mult(0)
         if j % 25 == 0:
             path = self.Astar(self.objectif, self.GRID)
-            # if self.index == 7:
-            #     for n in path:
-            #         displayNode(n)
             self.e = self.setDirection(path)
         self.acceleration.add(self.CheckOtherCollision())
-        self.acceleration.add(self.NeedForSpeed(self.e, self.grounds[-1]))
+        self.acceleration.add(self.NeedForSpeed(self.e))
         self.acceleration.add(self.CircleCollision(self.circles))
         self.acceleration.add(self.WallCollision(self.grounds))
         self.acceleration.mult(1 / self.masse)
 
     def display(self):
-
         fill(200)
         noStroke()
         circle(self.position.x, self.position.y, self.radius * 2)
@@ -119,10 +113,10 @@ class Bob:
         return (x >= 0) * x + 0
 
     def CheckOtherCollision(self):
-
         F = PVector(0, 0)
         for other in self.bobs:
-            if other.index != self.index:
+            V = other.position-self.position
+            if other.index != self.index and V.dot(self.velocity)>=0:
                 dij = (self.position - other.position).mag()
                 nij = (self.position - other.position).normalize()
                 rij = self.radius + other.radius
@@ -138,15 +132,12 @@ class Bob:
     def CircleCollision(self, circles):
         F = PVector(0, 0)
         for c in circles:
-
             d = (self.position - c.center).mag()
             n = (self.position - c.center).normalize()
             r = self.radius + c.radius
             t = n.copy()
             t.rotate(HALF_PI)
             stroke(255, 0, 0)
-
-            
             fic = (self.A * exp((1.2 * r - d) / self.B) + self.kw * self.g(1.2 * r - d)
                        ) * n + (self.K * self.g(r - d) * (self.velocity.dot(t))) * t
             F.add(fic)
@@ -154,17 +145,12 @@ class Bob:
 
     def WallCollision(self, grounds):
         F = PVector(0, 0)
-
         for ground in grounds:
-
-       
             v = ground.b - ground.a
             v.normalize()
-
             I = PVector(self.position.x - ground.x, self.position.y - ground.y)
             P = v.mult(v.dot(I))
             H = PVector(P.x + ground.x, P.y + ground.y)
-
             
             def isInSegment(H, ground):
                 vA = ground.a - H
@@ -178,18 +164,10 @@ class Bob:
                 stroke(255, 0, 0)
                 t = n.copy().rotate(HALF_PI)
 
-                fiw = (self.A * exp((1.2 * r - diw) / self.B) + self.kw * self.g(1.2 * r - diw)
-                       ) * n + (self.K * self.g(r - diw) * (self.velocity.dot(t))) * t
+                fiw = (self.A * exp((1.2 * r - diw) / self.B) + self.kw * self.g(1.2 * r - diw)) * n 
+                - (self.K * self.g(r - diw) * (self.velocity.dot(t))) * t
                 F.add(fiw)
         return F
-
-    def FrictionForce(self):
-        f = self.velocity.copy()
-        norme = f.mag()
-        f.normalize()
-        f *= -friction
-        f.setMag(norme * norme)
-        return f
 
     def FollowMouse(self):
         if mousePressed:
@@ -202,16 +180,12 @@ class Bob:
             return PVector(ax, ay).setMag(MouseMag)
 
 
-    def NeedForSpeed(self, e, barrier):
-
-
+    def NeedForSpeed(self, e):
         F = PVector(0, 0)
-        if barrier.state == 'g':
+        if j < 50:
             F = (vi * e - self.velocity) / tau
-        elif barrier.state == 'b':
-            F = (-vi * e - self.velocity) / tau
         else:
-            F = (vi * e - self.velocity) / tau
+            F = self.masse*(vi * e - self.velocity) / tau
         return F
 
     def intersection(self, ground):
@@ -239,10 +213,8 @@ class Bob:
         PATH = []
         start = Node(self.position.x // s, self.position.y // s, 's')
         Open.add(start)
-
         while Open:
             u = min(Open, key=clef)
-
             Open.remove(u)
             Closed.add(u)
             if u.x == objectif.x and u.y == objectif.y:
@@ -252,17 +224,13 @@ class Bob:
                     N.nature = 'p'
                     PATH.append(N)
                 PATH.reverse()
-
                 Open = set()
                 found = True
-
             if not(found):
                 for v in u.voisins(GRID):
                     if v.nature == '!' or v in Closed:
                         continue
-
                     new_G = u.G + u.versVoisin(v)
-
                     if v.G > new_G or not(v in Open):
                         v.G = new_G
                         v.H = euclide(objectif, v)
@@ -273,9 +241,11 @@ class Bob:
         return PATH
 
     def setDirection(self, path):
-        n = path[4]
-        e = PVector(
-            s * n.x - self.position.x, s * n.y - self.position.y).normalize()
+        if len(path)>=5:
+            n = path[4]
+            e = PVector(s * n.x - self.position.x, s * n.y - self.position.y).normalize()
+        else :
+            e = self.e
         return e
 
 
@@ -346,6 +316,7 @@ class Barrier(Ground):
                 self.y = (self.a.y + self.b.y) / 2
                 self.lon = dist(self.a.x, self.a.y, self.b.x, self.b.y)
                 self.rot = atan2((self.b.y - self.a.y), (self.b.x - self.a.x))
+
 class Circle:
     
     def __init__(self, x, y, r):
